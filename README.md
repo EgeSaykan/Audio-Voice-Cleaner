@@ -43,6 +43,14 @@ Click an audio file in the library to load it into the timeline. Supported forma
 
 Keyboard shortcuts: **R** record/stop, **Space** play/pause, **Home** return to start, **Ctrl+S** save session, **Ctrl+O** choose folder. Click/drag the timeline to seek, use **Left/Right** for finer steps, and **Shift+scroll** to pan.
 
+## Voice Impact Coach
+
+Open a recording folder and click **Voice Impact Coach…** in the Recordings panel. Choose a microphone take and click **Analyze delivery** for an editable English transcript, word timings in the service result, pace, filler counts, pauses, pitch and energy range. The local iamspeaker service runs on CPU.
+
+With the EditX service running on an NVIDIA GPU, review the clip transcript, choose a style and click **Generate enhanced reference**. Use **Compare recordings** to listen to both versions and see whether the recognized words changed. For recordings longer than 30 seconds, choose a start and length and analyze that section before generating a reference.
+
+[Local service setup, GPU fine-tuning and verification](integrations/README.md)
+
 ## Project structure
 
 ```text

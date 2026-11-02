@@ -1,0 +1,9 @@
+iamspeaker.url=http://127.0.0.1:3000
+editx.url=http://127.0.0.1:7861
+ffmpeg=ffmpeg
+upload.mb=50
+clip.seconds=30
+poll.ms=750
+timeout.seconds=600
+# Relative to the original recording's folder, or an absolute path.
+output.dir=.voice-coach

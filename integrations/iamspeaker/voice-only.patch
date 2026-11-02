@@ -1,0 +1,53 @@
+diff --git a/Dockerfile b/Dockerfile
+index 1cadb9c..bfd95f0 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -27 +27 @@ RUN apt-get update \
+-RUN git clone --depth 1 https://github.com/ggerganov/whisper.cpp /w \
++RUN git clone --depth 1 --branch v1.8.2 https://github.com/ggml-org/whisper.cpp /w \
+diff --git a/app/api/recordings/[id]/analysis/route.ts b/app/api/recordings/[id]/analysis/route.ts
+index 1bf916e..c6329e0 100644
+--- a/app/api/recordings/[id]/analysis/route.ts
++++ b/app/api/recordings/[id]/analysis/route.ts
+@@ -0,0 +1,2 @@
++import { readFileSync } from "node:fs";
++import type { TranscriptResult } from "@/lib/domain";
+@@ -26,0 +29,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
++    if (rec && session?.slideFilePath === "(voice-only)") {
++      const transcript: TranscriptResult = JSON.parse(readFileSync(`${rec.audioFilePath}.transcript.json`, "utf8"));
++      return Response.json({
++        sessionId: session.id, recordingId: id, durationSec: rec.durationSec, transcript,
++        wpm: row.wpm, fillerWords: row.fillerWords, pauseCount: row.pauseCount,
++        prosody: row.prosody, riskExpressions: row.riskExpressions,
++        pronunciationIssues: row.pronunciationIssues,
++      });
++    }
+diff --git a/app/api/sessions/route.ts b/app/api/sessions/route.ts
+index f8db749..eb01bb9 100644
+--- a/app/api/sessions/route.ts
++++ b/app/api/sessions/route.ts
+@@ -57,0 +58 @@ const Body = z.object({
++  voiceOnly: z.boolean().default(false),
+@@ -71 +72 @@ export async function POST(req: Request) {
+-        slideFilePath: "(inline)",
++        slideFilePath: body.voiceOnly ? "(voice-only)" : "(inline)",
+diff --git a/lib/ai/whispercpp/index.ts b/lib/ai/whispercpp/index.ts
+index 4c711d8..62d4a4d 100644
+--- a/lib/ai/whispercpp/index.ts
++++ b/lib/ai/whispercpp/index.ts
+@@ -43 +42,0 @@ export class WhisperCppStt implements SttAdapter {
+-        "-nt",
+diff --git a/lib/jobs/handlers.ts b/lib/jobs/handlers.ts
+index c728fdb..1c9dbfd 100644
+--- a/lib/jobs/handlers.ts
++++ b/lib/jobs/handlers.ts
+@@ -0,0 +1 @@
++import { config } from "@/lib/config";
+@@ -157,0 +159,2 @@ export function createHandlers(db: Db, adapters: Adapters): JobHandlers {
++      const voiceOnly = session.slideFilePath === "(voice-only)";
++      if (voiceOnly && config.USE_STUB_ADAPTERS) throw new Error("Real local Whisper is required");
+@@ -158,0 +162,4 @@ export function createHandlers(db: Db, adapters: Adapters): JobHandlers {
++      if (voiceOnly) {
++        if (!transcript.text.trim()) throw new Error("TRANSCRIPTION_FAILED: No words recognized");
++        writeFileSync(`${rec.audioFilePath}.transcript.json`, JSON.stringify(transcript), { mode: 0o600 });
++      }

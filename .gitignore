@@ -6,3 +6,9 @@ build/
 *.iml
 .wave-audio/
 demo_recordings/
+
+.voice-tools/
+.voice-coach/
+coach.properties
+__pycache__/
+training/

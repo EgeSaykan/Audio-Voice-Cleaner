@@ -81,6 +81,37 @@ class DesktopUiTest {
             if (frame != null) { edt(() -> { frame.close(); return null; }); await(() -> !frame.isDisplayable()); }
         }
     }
+    @Test @org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable(named="WAVE_SPEECH_SAMPLE", matches=".+")
+    void coachDialogAnalyzesSpeechFromTheRecordingLibrary() throws Exception {
+        Files.copy(Path.of(System.getenv("WAVE_SPEECH_SAMPLE")), folder.resolve("Speech sample.wav"));
+        try {
+            edt(() -> {
+                Theme.applyTheme(); controller = new StudioController(); frame = new StudioFrame(controller);
+                frame.setVisible(true); controller.selectFolder(folder, null); return null;
+            });
+            await(() -> !controller.busy());
+            SwingUtilities.invokeLater(() -> named(frame, "voiceCoach", JButton.class).doClick());
+            await(() -> Arrays.stream(frame.getOwnedWindows()).anyMatch(w -> w instanceof JDialog && w.isShowing()));
+            JDialog coach = edt(() -> (JDialog) Arrays.stream(frame.getOwnedWindows()).filter(Window::isShowing).findFirst().orElseThrow());
+            try {
+                edt(() -> { named(coach, "analyzeDelivery", JButton.class).doClick(); return null; });
+                long deadline = System.nanoTime() + java.time.Duration.ofMinutes(2).toNanos();
+                while (edt(() -> named(coach, "coachTranscript", JTextArea.class).getText().isBlank())) {
+                    if (System.nanoTime() > deadline) fail("No transcript appeared in the coach dialog");
+                    Thread.sleep(100);
+                }
+                edt(() -> {
+                    assertTrue(named(coach, "deliveryReport", JTextArea.class).getText().contains("words/min"));
+                    snapshot(coach.getContentPane(), Path.of(System.getProperty("wave.screenshots"), "voice-coach.png"));
+                    return null;
+                });
+            } finally {
+                edt(() -> { coach.dispatchEvent(new java.awt.event.WindowEvent(coach, java.awt.event.WindowEvent.WINDOW_CLOSING)); return null; });
+            }
+        } finally {
+            if (frame != null) { edt(() -> { frame.close(); return null; }); await(() -> !frame.isDisplayable()); }
+        }
+    }
     private static <T> T edt(Callable<T> task) throws Exception {
         AtomicReference<T> value = new AtomicReference<>(); AtomicReference<Throwable> error = new AtomicReference<>();
         SwingUtilities.invokeAndWait(() -> { try { value.set(task.call()); } catch (Throwable e) { error.set(e); } });

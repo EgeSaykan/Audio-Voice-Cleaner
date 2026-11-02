@@ -1,0 +1,18 @@
+services:
+  speaker:
+    build: ../../.voice-tools/iamspeaker
+    ports:
+      - "127.0.0.1:3000:3000"
+    entrypoint: ["./node_modules/.bin/next", "start", "-H", "0.0.0.0"]
+    environment:
+      NEXT_TELEMETRY_DISABLED: "1"
+      DATA_DIR: /app/data
+      DATABASE_URL: file:/app/data/iamspeaker.db
+      WHISPER_MODEL_PATH: /models/ggml-base.en.bin
+      PRONUNCIATION_SCORER: heuristic
+      USE_STUB_ADAPTERS: "0"
+      JOB_MAX_ATTEMPTS: "1"
+      LOG_LEVEL: warn
+    volumes:
+      - ../../.voice-tools/iam-docker-data:/app/data:z
+      - ../../.voice-tools/models/ggml-base.en.bin:/models/ggml-base.en.bin:ro,z

@@ -2,6 +2,7 @@ package studio.wave.ui.library;
 
 import studio.wave.app.StudioController;
 import studio.wave.ui.components.*;
+import studio.wave.ui.coach.VoiceCoachDialog;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.*;
@@ -78,6 +79,9 @@ public final class LibraryPanel extends JPanel {
         field.getDocument().addDocumentListener(new DocumentListener() { public void insertUpdate(DocumentEvent e) { filter.run(); } public void removeUpdate(DocumentEvent e) { filter.run(); } public void changedUpdate(DocumentEvent e) { filter.run(); } });
         filter.run(); JScrollPane scrolling = scroll(list, PANEL); scrolling.setAlignmentX(0); body.add(scrolling); body.add(gap(13));
         body.add(label("Click a recording to add it to the timeline.", 9, DIM, Font.PLAIN)); body.add(gap(14));
+        ActionButton coach = new ActionButton("Voice Impact Coach…", "wave", MINT, BG);
+        coach.setName("voiceCoach"); coach.setAlignmentX(0); coach.setEnabled(!files.isEmpty()); coach.addActionListener(e -> VoiceCoachDialog.open(this, controller));
+        body.add(coach); body.add(gap(8));
         ActionButton change = new ActionButton("Change folder", "folder", RAISED, TEXT); change.setAlignmentX(0); change.addActionListener(e -> chooseFolder.run()); body.add(change);
     }
 }
