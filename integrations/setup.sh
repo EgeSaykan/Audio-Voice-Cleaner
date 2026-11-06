@@ -8,6 +8,42 @@ mkdir -p "$models"
 export UV_CACHE_DIR="$tools/cache/uv"
 export UV_PYTHON_INSTALL_DIR="$tools/python"
 export HF_HOME="$tools/cache/huggingface"
+jdk_command() {
+    [[ "$(uname -s)" == Linux ]] || {
+        echo "Automatic JDK setup currently supports Linux only." >&2
+        exit 1
+    }
+    local arch sha
+    case "$(uname -m)" in
+        x86_64|amd64)
+            arch=x64
+            sha=68982529869257d0ee6b824ec5aa270ff8b118bb438670da0b97ebdab178d7fb
+            ;;
+        aarch64|arm64)
+            arch=aarch64
+            sha=bb5b2ded252f21c6090cf780b0a408ad0d83bbb557e702955643557f13231880
+            ;;
+        *)
+            echo "Automatic JDK setup does not support architecture $(uname -m)." >&2
+            exit 1
+            ;;
+    esac
+    local dir="$tools/jdk" name="OpenJDK25U-jdk_${arch}_linux_hotspot_25.0.5_8.tar.gz"
+    local archive="$tools/cache/jdk/$name"
+    if [[ ! -x "$dir/bin/javac" ]]; then
+        mkdir -p "$dir" "$(dirname "$archive")"
+        if [[ ! -f "$archive" ]]; then
+            local part
+            part=$(mktemp "$tools/cache/jdk/.jdk-XXXXXX")
+            curl --fail --location --retry 3 -o "$part" "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.5%2B8/$name"
+            echo "$sha  $part" | sha256sum -c -
+            mv "$part" "$archive"
+        fi
+        echo "$sha  $archive" | sha256sum -c -
+        tar -xzf "$archive" -C "$dir" --strip-components=1
+    fi
+    "$dir/bin/java" -version
+}
 cmake_bin=
 cmake_command() {
     if cmake_bin=$(command -v cmake); then
@@ -123,7 +159,11 @@ speaker() {
     echo "$sha  $model" | sha256sum -c -
 }
 case "${1:-}" in
+    java)
+        jdk_command
+        ;;
     speaker)
+        jdk_command
         speaker
         checkout whisper.cpp https://github.com/ggml-org/whisper.cpp.git 4979e04f5dcaccb36057e059bbaed8a2f5288315
         cmake_command
@@ -150,5 +190,5 @@ case "${1:-}" in
             .venv/bin/hf download stepfun-ai/Step-Audio-EditX --revision 5fe2f8a05c2353301ad47d3c1747b262115da138 --local-dir "$models/Step-Audio-EditX"
         fi
         ;;
-    *) echo "Usage: $0 {speaker|speaker-docker|editx|editx-awq}" >&2; exit 2 ;;
+    *) echo "Usage: $0 {java|speaker|speaker-docker|editx|editx-awq}" >&2; exit 2 ;;
 esac

@@ -4,7 +4,11 @@ A Java desktop recording application for Fedora KDE / PipeWire. It records **rea
 
 ## Build and run
 
-Install a JDK 25. The Gradle wrapper downloads the pinned Gradle version automatically; no global Gradle installation or custom build scripts are needed.
+The project targets JDK 25. To install the pinned JDK inside `.voice-tools` without root access, run the setup command below. The Gradle wrapper automatically prefers this project-local JDK, even if the host's `JAVA_HOME` points to an older Java. It also downloads the pinned Gradle version automatically; no global Gradle installation is needed.
+
+```bash
+./integrations/setup.sh java
+```
 
 ```bash
 ./gradlew run
