@@ -88,13 +88,6 @@ APP_BASE_NAME=${0##*/}
 # Discard cd standard output in case $CDPATH is set (https://github.com/gradle/gradle/issues/25036)
 APP_HOME=$( cd -P "${APP_HOME:-./}" > /dev/null && printf '%s\n' "$PWD" ) || exit
 
-# Prefer the project-local JDK installed by integrations/setup.sh, including when
-# the host exports an older JAVA_HOME.
-if [ -x "$APP_HOME/.voice-tools/jdk/bin/java" ] ; then
-    JAVA_HOME=$APP_HOME/.voice-tools/jdk
-    export JAVA_HOME
-fi
-
 # Use the maximum available, or set MAX_FD != -1 to use that value.
 MAX_FD=maximum
 
@@ -124,7 +117,12 @@ esac
 
 
 # Determine the Java command to use to start the JVM.
-if [ -n "$JAVA_HOME" ] ; then
+if [ -x "$APP_HOME/.voice-tools/jdk/bin/java" ] ; then
+    JAVA_HOME=$APP_HOME/.voice-tools/jdk
+    JAVACMD=$JAVA_HOME/bin/java
+    PATH=$JAVA_HOME/bin:$PATH
+    export JAVA_HOME PATH
+elif [ -n "$JAVA_HOME" ] ; then
     if [ -x "$JAVA_HOME/jre/sh/java" ] ; then
         # IBM's JDK on AIX uses strange locations for the executables
         JAVACMD=$JAVA_HOME/jre/sh/java
