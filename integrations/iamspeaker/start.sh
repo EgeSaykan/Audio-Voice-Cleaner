@@ -11,4 +11,11 @@ export NEXT_TELEMETRY_DISABLED=1 USE_STUB_ADAPTERS=0 PRONUNCIATION_SCORER=heuris
 export OPENAI_API_KEY= ANTHROPIC_API_KEY= AZURE_SPEECH_KEY= ELEVENLABS_API_KEY=
 export LOG_LEVEL="${LOG_LEVEL:-warn}"
 if [[ ! -x "$WHISPER_BIN" || ! -s "$WHISPER_MODEL_PATH" ]]; then echo "Install the local Whisper binary and model first." >&2; exit 1; fi
-exec node node_modules/next/dist/bin/next dev -H 127.0.0.1 -p "${PORT:-3000}"
+if [[ -n "${NODE_BIN:-}" ]]; then
+    node_bin="$NODE_BIN"
+elif [[ -x "$tools/node/bin/node" ]]; then
+    node_bin="$tools/node/bin/node"
+else
+    node_bin=$(command -v node) || { echo "Install the speaker backend's local Node runtime first." >&2; exit 1; }
+fi
+exec "$node_bin" node_modules/next/dist/bin/next dev -H 127.0.0.1 -p "${PORT:-3000}"

@@ -24,23 +24,59 @@ cmake_command() {
     fi
     cmake_bin="$env/bin/cmake"
 }
+node_bin=
+node_command() {
+    local system_node node_version node_major node_minor
+    if system_node=$(command -v node); then
+        node_version=$("$system_node" -p 'process.versions.node')
+        IFS=. read -r node_major node_minor _ <<< "$node_version"
+        if (( node_major > 22 || (node_major == 22 && node_minor >= 13) )); then
+            node_bin="$system_node"
+            return
+        fi
+    fi
+    [[ "$(uname -s)" == Linux ]] || {
+        echo "Automatic Node setup currently supports Linux only." >&2
+        exit 1
+    }
+    local arch sha
+    case "$(uname -m)" in
+        x86_64|amd64)
+            arch=x64
+            sha=666148b9fe0c7e1301cc1b029e33a45e9e4a893f68d2d2bb1cc88a931a88a004
+            ;;
+        aarch64|arm64)
+            arch=arm64
+            sha=911d9c07af38c82be22cd0a3db613aabc578ba940b35380aeedadd6d48070bc1
+            ;;
+        *)
+            echo "Automatic Node setup does not support architecture $(uname -m)." >&2
+            exit 1
+            ;;
+    esac
+    local dir="$tools/node" archive="$tools/cache/node/node-v22.13.1-linux-$arch.tar.gz"
+    if [[ ! -x "$dir/bin/node" ]]; then
+        mkdir -p "$dir" "$(dirname "$archive")"
+        if [[ ! -f "$archive" ]]; then
+            local part
+            part=$(mktemp "$tools/cache/node/.node-XXXXXX")
+            curl --fail --location --retry 3 -o "$part" "https://nodejs.org/dist/v22.13.1/node-v22.13.1-linux-$arch.tar.gz"
+            echo "$sha  $part" | sha256sum -c -
+            mv "$part" "$archive"
+        fi
+        echo "$sha  $archive" | sha256sum -c -
+        tar -xzf "$archive" -C "$dir" --strip-components=1
+    fi
+    node_bin="$dir/bin/node"
+    export PATH="$dir/bin:$PATH"
+}
 pnpm_bin=()
 pnpm_command() {
+    node_command
     local system_pnpm
     if system_pnpm=$(command -v pnpm) && [[ "$("$system_pnpm" --version)" == 11.6.0 ]]; then
         pnpm_bin=("$system_pnpm")
         return
-    fi
-    command -v node >/dev/null || {
-        echo "Node 22.13 or newer is required for the speaker backend." >&2
-        exit 1
-    }
-    local node_version node_major node_minor
-    node_version=$(node -p 'process.versions.node')
-    IFS=. read -r node_major node_minor _ <<< "$node_version"
-    if (( node_major < 22 || (node_major == 22 && node_minor < 13) )); then
-        echo "Node 22.13 or newer is required; found $node_version." >&2
-        exit 1
     fi
     local dir="$tools/pnpm" archive="$tools/cache/pnpm/pnpm-11.6.0.tgz"
     local sha=9a36518224080c6fe5165afdcfe79bfa118c29be703f3f462b1e32efe1e98e47e8750b148e08286250aad4113cc7993ca413c4e2cd447752708c2ee5751bc95f
@@ -56,7 +92,7 @@ pnpm_command() {
         echo "$sha  $archive" | sha512sum -c -
         tar -xzf "$archive" -C "$dir" --strip-components=1
     fi
-    pnpm_bin=(node "$dir/bin/pnpm.mjs")
+    pnpm_bin=("$node_bin" "$dir/bin/pnpm.mjs")
 }
 checkout() {
     local name=$1 remote=$2 revision=$3 dir="$tools/$1"
