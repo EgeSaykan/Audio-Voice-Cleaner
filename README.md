@@ -49,7 +49,9 @@ Keyboard shortcuts: **R** record/stop, **Space** play/pause, **Home** return to 
 
 ## Voice Impact Coach
 
-Open a recording folder and click **Voice Impact Coach…** in the Recordings panel. Choose a microphone take and click **Analyze delivery** for an editable English transcript, word timings in the service result, pace, filler counts, pauses, pitch and energy range. The local iamspeaker service runs on CPU.
+Open **Workspace → Voice Impact Coach (EditX)…** at the top of the window. If no folder is selected, you will be asked to choose one containing audio recordings. You can also open **Voice Impact Coach…** in the Recordings panel. Choose a microphone take and click **Analyze delivery** for an editable English transcript, word timings in the service result, pace, filler counts, pauses, pitch and energy range. The local iamspeaker service runs on CPU.
+
+This workspace edits speech audio and exports WAV files. Video import, a video timeline and exporting edited audio back into a video are not currently implemented.
 
 With the EditX service running on an NVIDIA GPU, review the clip transcript, choose a style and click **Generate enhanced reference**. Use **Compare recordings** to listen to both versions and see whether the recognized words changed. For recordings longer than 30 seconds, choose a start and length and analyze that section before generating a reference.
 

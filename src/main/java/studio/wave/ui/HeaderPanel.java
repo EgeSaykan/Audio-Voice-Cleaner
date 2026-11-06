@@ -7,12 +7,20 @@ import java.awt.*;
 import static studio.wave.ui.Theme.*;
 
 public final class HeaderPanel extends JPanel {
-    public HeaderPanel() {
+    public HeaderPanel(Runnable openCoach, Runnable chooseFolder) {
         super(new BorderLayout(20, 0)); setBackground(PANEL);
         setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LINE), new EmptyBorder(17, 25, 17, 25)));
         JPanel brand = row(PANEL, 11); brand.add(new JLabel(new ImageIcon(logoImage().getScaledInstance(36, 36, Image.SCALE_SMOOTH))));
         JPanel names = vertical(PANEL); names.add(label("wave studio", 19, TEXT, Font.BOLD)); names.add(gap(3)); names.add(label("MAKE ROOM FOR YOUR VOICE", 8, MUTED, Font.BOLD)); brand.add(names); add(brand, BorderLayout.WEST);
-        JPanel context = row(PANEL, 12); context.add(new Glyph("grid", MUTED, 16)); context.add(label("Workspace", 12, MUTED, Font.PLAIN)); context.add(label("/", 15, DIM, Font.PLAIN)); context.add(label("Voice session", 12, TEXT, Font.PLAIN));
+        JMenuBar navigation = new JMenuBar(); navigation.setOpaque(false); navigation.setBorder(BorderFactory.createEmptyBorder());
+        JMenu workspace = new JMenu("Workspace ▾"); workspace.setName("workspaceMenu");
+        workspace.setFont(BODY.deriveFont(12f)); workspace.setForeground(TEXT);
+        workspace.setToolTipText("Open voice editing tools or choose a recording folder");
+        JMenuItem coach = new JMenuItem("Voice Impact Coach (EditX)…"); coach.setName("workspaceCoach");
+        coach.addActionListener(e -> openCoach.run()); workspace.add(coach);
+        JMenuItem folder = new JMenuItem("Choose recording folder…"); folder.setName("workspaceFolder");
+        folder.addActionListener(e -> chooseFolder.run()); workspace.add(folder); navigation.add(workspace);
+        JPanel context = row(PANEL, 12); context.add(new Glyph("grid", MUTED, 16)); context.add(navigation); context.add(label("/", 15, DIM, Font.PLAIN)); context.add(label("Voice session", 12, TEXT, Font.PLAIN));
         JPanel center = new JPanel(new GridBagLayout()); center.setOpaque(false); center.add(context); add(center, BorderLayout.CENTER);
         JPanel actions = row(PANEL, 12); actions.add(new Badge("PIPEWIRE", MINT, color("26382F")));
         IconButton info = new IconButton("info", "About Wave Studio");
