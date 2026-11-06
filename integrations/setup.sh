@@ -5,6 +5,25 @@ root=$(cd "$(dirname "$0")/.." && pwd)
 tools="$root/.voice-tools"
 models="$tools/models"
 mkdir -p "$models"
+export UV_CACHE_DIR="$tools/cache/uv"
+export UV_PYTHON_INSTALL_DIR="$tools/python"
+export HF_HOME="$tools/cache/huggingface"
+cmake_bin=
+cmake_command() {
+    if cmake_bin=$(command -v cmake); then
+        return
+    fi
+    command -v uv >/dev/null || {
+        echo "CMake is missing. Install uv in your user account, then rerun this command." >&2
+        exit 1
+    }
+    local env="$tools/cmake"
+    if [[ ! -x "$env/bin/cmake" ]]; then
+        uv venv --clear --python 3.12 "$env"
+        uv pip install --python "$env/bin/python" cmake==3.31.6
+    fi
+    cmake_bin="$env/bin/cmake"
+}
 checkout() {
     local name=$1 remote=$2 revision=$3 dir="$tools/$1"
     if [[ ! -d "$dir" ]]; then
@@ -37,10 +56,11 @@ case "${1:-}" in
     speaker)
         speaker
         checkout whisper.cpp https://github.com/ggml-org/whisper.cpp.git 4979e04f5dcaccb36057e059bbaed8a2f5288315
-        cmake -S "$tools/whisper.cpp" -B "$tools/whisper-build" -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DGGML_NATIVE=OFF -DWHISPER_BUILD_TESTS=OFF
-        cmake --build "$tools/whisper-build" -j4 --target whisper-cli
+        cmake_command
+        "$cmake_bin" -S "$tools/whisper.cpp" -B "$tools/whisper-build" -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DGGML_NATIVE=OFF -DWHISPER_BUILD_TESTS=OFF
+        "$cmake_bin" --build "$tools/whisper-build" -j4 --target whisper-cli
         install -Dm755 "$tools/whisper-build/bin/whisper-cli" "$tools/bin/whisper-cli"
-        cd "$tools/iamspeaker"; pnpm install --frozen-lockfile
+        cd "$tools/iamspeaker"; pnpm install --frozen-lockfile --store-dir "$tools/cache/pnpm"
         ;;
     speaker-docker)
         speaker
