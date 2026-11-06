@@ -14,7 +14,7 @@ On the machine where this feature was developed, the English model, CPU executab
 ./gradlew run
 ```
 
-For a fresh Linux installation, install Git, curl, a C/C++ compiler, FFmpeg, Node 22.13+, pnpm (upstream pins 11.6.0) and uv. Run the setup command once. It uses a system CMake when available; otherwise uv installs pinned CMake 3.31.6 under `.voice-tools/cmake`, without root access. It builds a static Whisper CLI and verifies the 142 MiB English base model by SHA-256. JDK 25 is required for WaveStudio. The setup keeps its uv, Hugging Face and pnpm caches under `.voice-tools/cache` and any uv-managed Python under `.voice-tools/python`. Deleting `.voice-tools` therefore removes the locally installed backends, models, fallback CMake environment and setup caches; it does not remove prerequisite commands that were installed separately.
+For a fresh Linux installation, install Git, curl, a C/C++ compiler, FFmpeg, Node 22.13+ and uv. Run the setup command once. It uses system CMake when available and system pnpm when it is the upstream-pinned 11.6.0. Otherwise it installs the missing pinned tool under `.voice-tools`, without root access, and verifies the downloaded pnpm package by SHA-512. It builds a static Whisper CLI and verifies the 142 MiB English base model by SHA-256. JDK 25 is required for WaveStudio. The setup keeps its uv, Hugging Face and pnpm caches under `.voice-tools/cache` and any uv-managed Python under `.voice-tools/python`. Deleting `.voice-tools` therefore removes the locally installed backends, models, fallback tools and setup caches; it does not remove prerequisite commands that were installed separately.
 
 ```bash
 ./integrations/setup.sh speaker

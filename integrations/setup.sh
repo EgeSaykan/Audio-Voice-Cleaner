@@ -24,6 +24,40 @@ cmake_command() {
     fi
     cmake_bin="$env/bin/cmake"
 }
+pnpm_bin=()
+pnpm_command() {
+    local system_pnpm
+    if system_pnpm=$(command -v pnpm) && [[ "$("$system_pnpm" --version)" == 11.6.0 ]]; then
+        pnpm_bin=("$system_pnpm")
+        return
+    fi
+    command -v node >/dev/null || {
+        echo "Node 22.13 or newer is required for the speaker backend." >&2
+        exit 1
+    }
+    local node_version node_major node_minor
+    node_version=$(node -p 'process.versions.node')
+    IFS=. read -r node_major node_minor _ <<< "$node_version"
+    if (( node_major < 22 || (node_major == 22 && node_minor < 13) )); then
+        echo "Node 22.13 or newer is required; found $node_version." >&2
+        exit 1
+    fi
+    local dir="$tools/pnpm" archive="$tools/cache/pnpm/pnpm-11.6.0.tgz"
+    local sha=9a36518224080c6fe5165afdcfe79bfa118c29be703f3f462b1e32efe1e98e47e8750b148e08286250aad4113cc7993ca413c4e2cd447752708c2ee5751bc95f
+    if [[ ! -f "$dir/bin/pnpm.mjs" ]]; then
+        mkdir -p "$dir" "$(dirname "$archive")"
+        if [[ ! -f "$archive" ]]; then
+            local part
+            part=$(mktemp "$tools/cache/pnpm/.pnpm-XXXXXX")
+            curl --fail --location --retry 3 -o "$part" https://registry.npmjs.org/pnpm/-/pnpm-11.6.0.tgz
+            echo "$sha  $part" | sha512sum -c -
+            mv "$part" "$archive"
+        fi
+        echo "$sha  $archive" | sha512sum -c -
+        tar -xzf "$archive" -C "$dir" --strip-components=1
+    fi
+    pnpm_bin=(node "$dir/bin/pnpm.mjs")
+}
 checkout() {
     local name=$1 remote=$2 revision=$3 dir="$tools/$1"
     if [[ ! -d "$dir" ]]; then
@@ -60,7 +94,8 @@ case "${1:-}" in
         "$cmake_bin" -S "$tools/whisper.cpp" -B "$tools/whisper-build" -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DGGML_NATIVE=OFF -DWHISPER_BUILD_TESTS=OFF
         "$cmake_bin" --build "$tools/whisper-build" -j4 --target whisper-cli
         install -Dm755 "$tools/whisper-build/bin/whisper-cli" "$tools/bin/whisper-cli"
-        cd "$tools/iamspeaker"; pnpm install --frozen-lockfile --store-dir "$tools/cache/pnpm"
+        pnpm_command
+        (cd "$tools/iamspeaker" && "${pnpm_bin[@]}" install --frozen-lockfile --store-dir "$tools/cache/pnpm/store")
         ;;
     speaker-docker)
         speaker
