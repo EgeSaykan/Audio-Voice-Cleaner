@@ -8,6 +8,9 @@ import static studio.wave.ui.Theme.*;
 
 public final class HeaderPanel extends JPanel {
     public HeaderPanel(Runnable openCoach, Runnable chooseFolder) {
+        this(openCoach, chooseFolder, () -> {});
+    }
+    public HeaderPanel(Runnable openCoach, Runnable chooseFolder, Runnable combine) {
         super(new BorderLayout(20, 0)); setBackground(PANEL);
         setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LINE), new EmptyBorder(17, 25, 17, 25)));
         JPanel brand = row(PANEL, 11); brand.add(new JLabel(new ImageIcon(logoImage().getScaledInstance(36, 36, Image.SCALE_SMOOTH))));
@@ -19,7 +22,9 @@ public final class HeaderPanel extends JPanel {
         JMenuItem coach = new JMenuItem("Voice Impact Coach (EditX)…"); coach.setName("workspaceCoach");
         coach.addActionListener(e -> openCoach.run()); workspace.add(coach);
         JMenuItem folder = new JMenuItem("Choose recording folder…"); folder.setName("workspaceFolder");
-        folder.addActionListener(e -> chooseFolder.run()); workspace.add(folder); navigation.add(workspace);
+        folder.addActionListener(e -> chooseFolder.run()); workspace.add(folder);
+        JMenuItem combined = new JMenuItem("Combine recordings…"); combined.setName("workspaceCombine");
+        combined.addActionListener(e -> combine.run()); workspace.add(combined); navigation.add(workspace);
         JPanel context = row(PANEL, 12); context.add(new Glyph("grid", MUTED, 16)); context.add(navigation); context.add(label("/", 15, DIM, Font.PLAIN)); context.add(label("Voice session", 12, TEXT, Font.PLAIN));
         JPanel center = new JPanel(new GridBagLayout()); center.setOpaque(false); center.add(context); add(center, BorderLayout.CENTER);
         JPanel actions = row(PANEL, 12); actions.add(new Badge("PIPEWIRE", MINT, color("26382F")));

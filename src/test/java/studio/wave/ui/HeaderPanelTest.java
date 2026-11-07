@@ -8,9 +8,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class HeaderPanelTest {
     @Test void workspaceMenuOpensCoachAndFolderPicker() throws Exception {
-        AtomicInteger coach = new AtomicInteger(), folder = new AtomicInteger();
+        AtomicInteger coach = new AtomicInteger(), folder = new AtomicInteger(), combine = new AtomicInteger();
         SwingUtilities.invokeAndWait(() -> {
-            var header = new HeaderPanel(coach::incrementAndGet, folder::incrementAndGet);
+            var header = new HeaderPanel(coach::incrementAndGet, folder::incrementAndGet, combine::incrementAndGet);
             JMenu menu = findMenu(header);
             assertNotNull(menu, "Workspace must be an interactive menu");
             assertEquals("workspaceMenu", menu.getName());
@@ -20,6 +20,8 @@ class HeaderPanelTest {
             assertEquals(0, folder.get());
             menu.getItem(1).doClick();
             assertEquals(1, folder.get());
+            assertEquals("workspaceCombine", menu.getItem(2).getName());
+            menu.getItem(2).doClick(); assertEquals(1, combine.get());
         });
     }
 

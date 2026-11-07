@@ -3,6 +3,7 @@ package studio.wave.ui.library;
 import studio.wave.app.StudioController;
 import studio.wave.ui.components.*;
 import studio.wave.ui.coach.VoiceCoachDialog;
+import studio.wave.ui.CombineRecordingsDialog;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.*;
@@ -82,6 +83,9 @@ public final class LibraryPanel extends JPanel {
         ActionButton coach = new ActionButton("Voice Impact Coach…", "wave", MINT, BG);
         coach.setName("voiceCoach"); coach.setAlignmentX(0); coach.setEnabled(!files.isEmpty()); coach.addActionListener(e -> VoiceCoachDialog.open(this, controller));
         body.add(coach); body.add(gap(8));
+        ActionButton combine = new ActionButton("Combine recordings…", "wave", RAISED, TEXT);
+        combine.setName("combineRecordings"); combine.setAlignmentX(0); combine.setEnabled(files.size() >= 2);
+        combine.addActionListener(e -> CombineRecordingsDialog.open(this, controller)); body.add(combine); body.add(gap(8));
         ActionButton change = new ActionButton("Change folder", "folder", RAISED, TEXT); change.setAlignmentX(0); change.addActionListener(e -> chooseFolder.run()); body.add(change);
     }
 }

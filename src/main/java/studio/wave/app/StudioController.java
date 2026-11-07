@@ -23,6 +23,7 @@ public final class StudioController {
     private List<AudioDevice> devices = List.of();
     private List<Path> files = List.of();
     private List<AudioTrack> currentTakes = List.of();
+    private List<Path> lastRecordingFiles = List.of();
     private State state = State.READY;
     private String status = "Choose your inputs and a folder, then record your first take.";
     private Runnable changed = () -> {}, ticked = () -> {};
@@ -43,6 +44,7 @@ public final class StudioController {
     public State state() { return state; }
     public String status() { return status; }
     public List<Path> files() { return files; }
+    public List<Path> lastRecordingFiles() { return lastRecordingFiles; }
     public List<AudioDevice> devices(AudioDevice.Type type) { return devices.stream().filter(d -> d.type() == type).toList(); }
     public List<AudioDevice> selected(AudioDevice.Type type) {
         Set<String> ids = type == AudioDevice.Type.INPUT ? session.inputs() : session.outputs();
@@ -132,6 +134,7 @@ public final class StudioController {
                 session.setCursor(currentTakes.stream().mapToDouble(AudioTrack::end).max().orElse(session.cursor()));
                 boolean silent = currentTakes.stream().allMatch(t -> t.waveform().maximum() == 0);
                 files = finishedFiles; state = State.READY;
+                lastRecordingFiles = currentTakes.stream().map(AudioTrack::file).toList();
                 status = currentTakes.size() + " WAV recording(s) saved" + (silent ? " · input was silent; check microphone mute/gain" : " · ready to play");
                 currentTakes = List.of(); changed.run();
                 if (failure != null) fail(failure);
@@ -183,6 +186,29 @@ public final class StudioController {
         if (!editable()) return;
         if (state == State.PLAYING) pause();
         task("Saving session and audio references…", () -> store.save(session), path -> status = "Saved " + path.getFileName() + " · WAV audio is in your recording folder");
+    }
+    public void combineRecordings(List<Path> sources, Consumer<VoiceCombiner.Result> complete) {
+        if (!editable() || session.folder() == null) return;
+        if (state == State.PLAYING) pause();
+        List<Path> selected = List.copyOf(sources); Path folder = session.folder();
+        record Combined(VoiceCombiner.Result result, AudioTrack track, List<Path> files) { }
+        task("Preparing combined voice recording…", () -> {
+            var result = new VoiceCombiner().combine(selected, folder, message -> SwingUtilities.invokeLater(() -> {
+                if (!closing) { status = message; changed.run(); }
+            }));
+            return new Combined(result, library.load(result.audio()), library.list(folder));
+        }, combined -> {
+            Path reference = Path.of(combined.result.measurements().reference()).toAbsolutePath().normalize();
+            double offset = session.tracks().stream().filter(t -> t.file().toAbsolutePath().normalize().equals(reference))
+                    .mapToDouble(AudioTrack::start).findFirst().orElse(0);
+            Set<Path> paths = new HashSet<>(); selected.forEach(p -> paths.add(p.toAbsolutePath().normalize()));
+            session.tracks().stream().filter(t -> paths.contains(t.file().toAbsolutePath().normalize())).forEach(t -> t.setMuted(true));
+            AudioTrack loaded = combined.track;
+            session.tracks().add(new AudioTrack("Combined voice", "Enhanced from " + selected.size() + " microphones", "", offset, loaded.file(), loaded.waveform()));
+            files = combined.files; session.setCursor(offset);
+            status = "Combined voice saved · source tracks muted for comparison";
+            if (complete != null) complete.accept(combined.result);
+        });
     }
     public void tick() {
         if (state == State.RECORDING) {

@@ -28,7 +28,7 @@ public final class StudioFrame extends JFrame {
         setSize(Math.min(1510, screen.width - 70), Math.min(940, screen.height - 70)); setLocationRelativeTo(null); setIconImage(logoImage());
         devices = new DeviceSidebar(controller, this::showDevices); library = new LibraryPanel(controller, () -> chooseFolder(null));
         editor = new EditorPanel(controller, this::record); transport = new TransportPanel(controller, this::record, this::save);
-        JPanel root = new JPanel(new BorderLayout()); root.setBackground(BG); root.add(new HeaderPanel(this::openCoach, () -> chooseFolder(null)), BorderLayout.NORTH);
+        JPanel root = new JPanel(new BorderLayout()); root.setBackground(BG); root.add(new HeaderPanel(this::openCoach, () -> chooseFolder(null), this::combine), BorderLayout.NORTH);
         JPanel workspace = new JPanel(new BorderLayout()); workspace.setOpaque(false); workspace.add(devices, BorderLayout.WEST); workspace.add(library, BorderLayout.EAST); workspace.add(editor, BorderLayout.CENTER);
         root.add(workspace, BorderLayout.CENTER); root.add(transport, BorderLayout.SOUTH); setContentPane(root);
         controller.setListeners(this::refresh, this::tick, message -> JOptionPane.showMessageDialog(this, message, "Audio operation", JOptionPane.ERROR_MESSAGE));
@@ -38,6 +38,11 @@ public final class StudioFrame extends JFrame {
         bind("HOME", "home", () -> controller.seek(0)); bind("control O", "folder", () -> chooseFolder(null)); refresh();
     }
     public void close() { controller.close(() -> { timer.stop(); dispose(); }); }
+    private void combine() {
+        if (!controller.editable()) return;
+        if (controller.session().folder() == null) { chooseFolder(this::combine); return; }
+        CombineRecordingsDialog.open(this, controller);
+    }
     private void refresh() { devices.refresh(); library.refresh(); editor.refresh(); transport.refresh(); }
     private void tick() { devices.refreshLevels(); editor.tick(); transport.tick(); }
     private void openCoach() {
